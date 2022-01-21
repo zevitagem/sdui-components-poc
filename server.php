@@ -10,7 +10,7 @@ class Server
             'components' => [
                 [
                     'name' => 'Parcelamento_A',
-                    'binds' => ['Mensagem_B'],
+                    'binds' => ['Mensagem_A'],
                     'elements' => ['input', 'select']
                 ],
                 [

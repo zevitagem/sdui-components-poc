@@ -82,7 +82,7 @@
     <script
         src="https://code.jquery.com/jquery-3.6.0.min.js"
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-        crossorigin="anonymous"></script>
+    crossorigin="anonymous"></script>
     <script>
         $(document).ready(function () {
 
@@ -107,19 +107,16 @@
                         callback(result);
                     }
                 });
-
             }
 
             function imprimirDivisor() {
 
                 putRightContent('<div class="divisor"><hr></div>');
-
             }
 
             function imprimirAcoes(url) {
 
                 putRightContent('<div class="acao">' + url + '</div>');
-
             }
 
             function imprimirBottom(resposta) {
@@ -141,7 +138,7 @@
             }
 
             function createJsonInString(value) {
-                
+
                 return JSON.stringify(value, undefined, 2);
             }
 
@@ -152,7 +149,7 @@
             }
 
             function putRightContent(content) {
-                
+
                 rightContainer.append(content);
             }
 
@@ -198,6 +195,10 @@
                             name: $(this).attr('name')
                         }
                     });
+
+                    if (!(binds.length > 0)) {
+                        return;
+                    }
 
                     var allConsequenceElements = new Array();
                     for (bind in binds) {
@@ -271,7 +272,7 @@
                 imprimirElementos(resposta);
             });
 
-        })
+        });
     </script>
 
 </html>
