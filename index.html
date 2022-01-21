@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            #box {
+                width : 100%;
+            }
+            #bottom {
+                background-color: #ccc;
+                width: 100%;
+                min-height: 300px;
+            }
+            .left, .right {
+                width: 45%;
+                display:inline-block;
+                vertical-align: top;
+            }
+            #container-left, #container-right {
+                border: 2px solid;
+                padding:5px;
+                height:100%;
+                min-height: 300px;
+            }
+            #container-right {
+                overflow-y: auto;
+                max-height: 300px;
+            }
+            #container-left {
+                background-color: #CCE
+            }
+            .acao {
+                border: 1px solid red;
+                font-style: italic;
+                background-color: lightcyan;
+                text-align: center;
+            }
+            .bolinha {
+                height: 25px;
+                width: 25px;
+                vertical-align: middle;
+                margin-left: 10px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+            .vermelha {
+                background-color: red
+            }
+            .verde {
+                background-color: green
+            }
+            .amarela {
+                background-color: yellow
+            }
+            .laranja {
+                background-color: orange
+            }
+            #container-right > div {
+                margin-top: 5px
+            }
+            .component .elements > * {
+                margin: 5px;
+            }
+            .divisor {
+                margin-bottom: 60px;
+                background-color: black;
+                height: 60px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="box">
+            <div id="container-left" class="left"></div>
+            <div id="container-right" class="right"></div>
+            <div id="bottom"></div>
+        </div>
+    </body>
+
+    <script
+        src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+        crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function () {
+
+            var rightContainer = $('#container-right'),
+                    leftContainer = $('#container-left'),
+                    globalComponents = {};
+
+            function buscarEstrutura(callback) {
+
+                $.ajax({
+                    url: "server.php?action=start",
+                    data: {
+                        extra: 'xx'
+                    },
+                    method: 'POST',
+                    dataType: 'json',
+                    error: function (error) {
+                        alert(error);
+                        console.log(error);
+                    },
+                    success: function (result) {
+                        callback(result);
+                    }
+                });
+
+            }
+
+            function imprimirDivisor() {
+
+                putRightContent('<div class="divisor"><hr></div>');
+
+            }
+
+            function imprimirAcoes(url) {
+
+                putRightContent('<div class="acao">' + url + '</div>');
+
+            }
+
+            function imprimirBottom(resposta) {
+
+                var content = createJsonInString(resposta);
+
+                $('#bottom').append('<pre>' + content + '</pre>');
+            }
+
+            function imprimirDoubleJSON(respostaA, respostaB) {
+
+                var contentA = createJsonInString(respostaA);
+                var contentB = createJsonInString(respostaB);
+
+                putRightContent('<div class="double-json">\n\
+                                    <div class="left"><pre>' + contentA + '</pre></div>\n\
+                                    <div class="right"><pre>' + contentB + '</pre></div>\n\
+                                </div>');
+            }
+
+            function createJsonInString(value) {
+                
+                return JSON.stringify(value, undefined, 2);
+            }
+
+            function imprimirJSON(resposta) {
+
+                var content = createJsonInString(resposta);
+                putRightContent('<div class="json"><pre>' + content + '</pre></div>');
+            }
+
+            function putRightContent(content) {
+                
+                rightContainer.append(content);
+            }
+
+            function criarComponente(component, content) {
+
+                var div = $('<fieldset class="component" id="' + component.name + '">\n\
+                                <legend>' + component.name + '</legend>\n\
+                                <div class="elements">' + content + '</div>\n\
+                            </fieldset>')
+
+                leftContainer.append(div);
+                imprimirAcoes('[Created] ' + component.name + ' component : OKAY <span class="bolinha verde"></span>');
+
+                if (!(content.length > 0)) {
+                    return;
+                }
+
+                div.on('change', 'select, input, textarea', function (e) {
+
+                    var binds = component.binds;
+
+                    imprimirAcoes('[On changing] ...<span class="bolinha laranja"></span>');
+                    imprimirJSON({
+                        event: event.type,
+                        component: component.name
+                    })
+
+                    if (binds.length == 0) {
+                        imprimirAcoes('[Stoped] Nothing to reload <span class="bolinha vermelha"></span>');
+                        imprimirDivisor();
+                        return;
+                    }
+
+                    imprimirJSON({binds: binds});
+                    imprimirAcoes('POST action=loadComponents');
+
+                    imprimirAcoes('[Reloading] ...<span class="bolinha amarela"></span>');
+                    imprimirJSON({
+                        application_state: ['all data here, people!!!'],
+                        components: binds,
+                        element: {
+                            value: $(this).val(),
+                            name: $(this).attr('name')
+                        }
+                    });
+
+                    var allConsequenceElements = new Array();
+                    for (bind in binds) {
+                        imprimirAcoes('[Reloaded] ' + binds[bind] + ' : OKAY <span class="bolinha verde"></span>');
+
+                        var consequenceComponents = globalComponents[binds[bind]];
+                        filteredConsequenceComponents = consequenceComponents.binds.filter(x => !binds.includes(x));
+
+                        if (filteredConsequenceComponents.length > 0) {
+                            allConsequenceElements = allConsequenceElements.concat(filteredConsequenceComponents);
+                        }
+                    }
+
+                    var uniq = [...new Set(allConsequenceElements)];
+                    if (uniq.length > 0) {
+                        for (consequenceElement in uniq) {
+                            imprimirAcoes('[Notifing after loaded:consequence] ' + uniq[consequenceElement] + ' : OKAY <span class="bolinha verde"></span>');
+                        }
+                    }
+
+                    imprimirDivisor();
+                });
+            }
+
+            function imprimirElementos(resposta) {
+
+                imprimirAcoes('POST action=loadComponents');
+
+                $.each(resposta.components, function (index, component) {
+
+                    var content = '';
+
+                    $.each(component.elements, function (elementIndex, elementValue) {
+
+                        var elementName = component.name + '-' + elementValue + '-' + elementIndex;
+
+                        switch (elementValue) {
+                            case 'select':
+                                content += '<select name="' + elementName + '">\n\
+                                                <option value="1">Opção [1] - ' + component.name + '</option>\n\
+                                                <option value="2">Opção [2] - ' + component.name + '</option>\n\
+                                            </select>'
+                                break;
+                            case 'checkbox':
+                                content += '<input type="checkbox" value="1" name="' + elementName + '"/>'
+                                break;
+                            case 'textarea':
+                                content += '<textarea name="' + elementName + '"></textarea>'
+                                break;
+                            default:
+                                content += '<input type="text" value="" name="' + elementName + '"/>'
+                                break;
+                        }
+                    });
+
+                    criarComponente(component, content);
+                });
+            }
+
+            function mapComponents(components) {
+
+                $.each(components, function (index, value) {
+                    globalComponents[value.name] = value;
+                });
+            }
+
+            imprimirAcoes('GET action=start');
+            buscarEstrutura(function (resposta) {
+                mapComponents(resposta.components);
+                imprimirBottom(resposta);
+                imprimirElementos(resposta);
+            });
+
+        })
+    </script>
+
+</html>
